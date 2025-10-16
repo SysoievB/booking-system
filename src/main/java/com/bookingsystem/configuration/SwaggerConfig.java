@@ -10,8 +10,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SwaggerConfig {
 
-    @Value("${swagger.host}")
-    private String host;
+    @Value("${swagger.url}")
+    private String url;
 
     @Bean
     public OpenAPI bookingSystemOpenAPI() {
@@ -21,7 +21,7 @@ public class SwaggerConfig {
                         .description("REST API documentation for the Booking System application")
                 )
                 .addServersItem(new Server()
-                        .url(host)
+                        .url(url)
                         .description("Local server")
                 );
     }
