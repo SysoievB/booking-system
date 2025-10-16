@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="1-create-enum-types" author="bs">
+        <sql>
+            CREATE TYPE accommodation_type AS ENUM ('HOME', 'FLAT', 'APARTMENT');
+
+            CREATE TYPE booking_status AS ENUM ('AVAILABLE', 'RESERVED', 'BOOKED');
+
+            CREATE TYPE payment_status AS ENUM ('PENDING', 'COMPLETED');
+
+            CREATE TYPE entity_type AS ENUM ('PAYMENT', 'BOOKING', 'USER', 'UNIT');
+
+            CREATE TYPE event_operation AS ENUM ('CREATE', 'UPDATE', 'DELETE');
+        </sql>
+    </changeSet>
+
+    <changeSet id="2-create-users-table" author="bs">
+        <createTable tableName="users">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="username" type="VARCHAR(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="3-create-bookings-table" author="bs">
+        <createTable tableName="bookings">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_bookings_user"
+                             references="users(id)"
+                             deleteCascade="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="4-create-units-table" author="bs">
+        <createTable tableName="units">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="number_of_rooms" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="accommodation_type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="booking_status" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="floor" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="booking_date" type="DATE"/>
+            <column name="version" type="INT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="base_cost" type="DOUBLE PRECISION">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_cost" type="DOUBLE PRECISION">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="booking_id" type="BIGINT">
+                <constraints foreignKeyName="fk_units_booking"
+                             references="bookings(id)"
+                             deleteCascade="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="5-create-payments-table" author="bs">
+        <createTable tableName="payments">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="booking_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             foreignKeyName="fk_payments_booking"
+                             references="bookings(id)"
+                             deleteCascade="true"/>
+            </column>
+            <column name="payment_status" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payment_deadline" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="paid_at" type="TIMESTAMP"/>
+            <column name="payment_amount" type="DOUBLE PRECISION">
+                <constraints nullable="false"/>
+            </column>
+            <column name="paid" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount_of_booked_days" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payment_timestamp" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="6-create-events-table" author="bs">
+        <createTable tableName="events">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="entity_type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="event_operation" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="7-create-indexes" author="bs">
+        <createIndex indexName="idx_units_number_of_rooms_total_cost_booking_date" tableName="units">
+            <column name="number_of_rooms"/>
+            <column name="total_cost"/>
+            <column name="booking_date"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="8-insert-users" author="bs">
+        <insert tableName="users">
+            <column name="username" value="john_doe"/>
+            <column name="email" value="john.doe@example.com"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="jane_smith"/>
+            <column name="email" value="jane.smith@example.com"/>
+        </insert>
+        <insert tableName="users">
+            <column name="username" value="bob_wilson"/>
+            <column name="email" value="bob.wilson@example.com"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="9-insert-10-units" author="bs">
+        <insert tableName="units">
+            <column name="number_of_rooms" valueNumeric="2"/>
+            <column name="accommodation_type" value="FLAT"/>
+            <column name="booking_status" value="AVAILABLE"/>
+            <column name="floor" valueNumeric="3"/>
+            <column name="base_cost" valueNumeric="100.00"/>
+            <column name="total_cost" valueNumeric="115.00"/>
+            <column name="description" value="Cozy 2-room flat on the 3rd floor with city view"/>
+        </insert>
+        <insert tableName="units">
+            <column name="number_of_rooms" valueNumeric="3"/>
+            <column name="accommodation_type" value="APARTMENT"/>
+            <column name="booking_status" value="AVAILABLE"/>
+            <column name="floor" valueNumeric="5"/>
+            <column name="base_cost" valueNumeric="150.00"/>
+            <column name="total_cost" valueNumeric="172.50"/>
+            <column name="description" value="Spacious 3-room apartment with balcony and parking"/>
+        </insert>
+        <insert tableName="units">
+            <column name="number_of_rooms" valueNumeric="4"/>
+            <column name="accommodation_type" value="HOME"/>
+            <column name="booking_status" value="AVAILABLE"/>
+            <column name="floor" valueNumeric="1"/>
+            <column name="base_cost" valueNumeric="200.00"/>
+            <column name="total_cost" valueNumeric="230.00"/>
+            <column name="description" value="Beautiful 4-room house with garden and garage"/>
+        </insert>
+        <insert tableName="units">
+            <column name="number_of_rooms" valueNumeric="1"/>
+            <column name="accommodation_type" value="FLAT"/>
+            <column name="booking_status" value="AVAILABLE"/>
+            <column name="floor" valueNumeric="2"/>
+            <column name="base_cost" valueNumeric="80.00"/>
+            <column name="total_cost" valueNumeric="92.00"/>
+            <column name="description" value="Compact studio flat perfect for solo travelers"/>
+        </insert>
+        <insert tableName="units">
+            <column name="number_of_rooms" valueNumeric="2"/>
+            <column name="accommodation_type" value="APARTMENT"/>
+            <column name="booking_status" value="AVAILABLE"/>
+            <column name="floor" valueNumeric="4"/>
+            <column name="base_cost" valueNumeric="120.00"/>
+            <column name="total_cost" valueNumeric="138.00"/>
+            <column name="description" value="Modern 2-room apartment in city center"/>
+        </insert>
+        <insert tableName="units">
+            <column name="number_of_rooms" valueNumeric="3"/>
+            <column name="accommodation_type" value="HOME"/>
+            <column name="booking_status" value="AVAILABLE"/>
+            <column name="floor" valueNumeric="2"/>
+            <column name="base_cost" valueNumeric="180.00"/>
+            <column name="total_cost" valueNumeric="207.00"/>
+            <column name="description" value="Charming 3-room townhouse with parking space"/>
+        </insert>
+        <insert tableName="units">
+            <column name="number_of_rooms" valueNumeric="5"/>
+            <column name="accommodation_type" value="HOME"/>
+            <column name="booking_status" value="AVAILABLE"/>
+            <column name="floor" valueNumeric="1"/>
+            <column name="base_cost" valueNumeric="250.00"/>
+            <column name="total_cost" valueNumeric="287.50"/>
+            <column name="description" value="Luxury 5-room villa with pool and gym"/>
+        </insert>
+        <insert tableName="units">
+            <column name="number_of_rooms" valueNumeric="2"/>
+            <column name="accommodation_type" value="FLAT"/>
+            <column name="booking_status" value="AVAILABLE"/>
+            <column name="floor" valueNumeric="6"/>
+            <column name="base_cost" valueNumeric="110.00"/>
+            <column name="total_cost" valueNumeric="126.50"/>
+            <column name="description" value="Bright 2-room flat with panoramic windows"/>
+        </insert>
+        <insert tableName="units">
+            <column name="number_of_rooms" valueNumeric="1"/>
+            <column name="accommodation_type" value="APARTMENT"/>
+            <column name="booking_status" value="AVAILABLE"/>
+            <column name="floor" valueNumeric="7"/>
+            <column name="base_cost" valueNumeric="90.00"/>
+            <column name="total_cost" valueNumeric="103.50"/>
+            <column name="description" value="Cozy studio apartment on top floor"/>
+        </insert>
+        <insert tableName="units">
+            <column name="number_of_rooms" valueNumeric="3"/>
+            <column name="accommodation_type" value="FLAT"/>
+            <column name="booking_status" value="AVAILABLE"/>
+            <column name="floor" valueNumeric="4"/>
+            <column name="base_cost" valueNumeric="140.00"/>
+            <column name="total_cost" valueNumeric="161.00"/>
+            <column name="description" value="Elegant 3-room flat with modern amenities"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="10-insert-unit-creation-events" author="bs">
+        <insert tableName="events">
+            <column name="entity_type" value="UNIT"/>
+            <column name="event_operation" value="CREATE"/>
+            <column name="entity_id" valueNumeric="1"/>
+            <column name="description" value="Unit created: 2 rooms, FLAT, floor 3"/>
+        </insert>
+        <insert tableName="events">
+            <column name="entity_type" value="UNIT"/>
+            <column name="event_operation" value="CREATE"/>
+            <column name="entity_id" valueNumeric="2"/>
+            <column name="description" value="Unit created: 3 rooms, APARTMENT, floor 5"/>
+        </insert>
+        <insert tableName="events">
+            <column name="entity_type" value="UNIT"/>
+            <column name="event_operation" value="CREATE"/>
+            <column name="entity_id" valueNumeric="3"/>
+            <column name="description" value="Unit created: 4 rooms, HOME, floor 1"/>
+        </insert>
+        <insert tableName="events">
+            <column name="entity_type" value="UNIT"/>
+            <column name="event_operation" value="CREATE"/>
+            <column name="entity_id" valueNumeric="4"/>
+            <column name="description" value="Unit created: 1 room, FLAT, floor 2"/>
+        </insert>
+        <insert tableName="events">
+            <column name="entity_type" value="UNIT"/>
+            <column name="event_operation" value="CREATE"/>
+            <column name="entity_id" valueNumeric="5"/>
+            <column name="description" value="Unit created: 2 rooms, APARTMENT, floor 4"/>
+        </insert>
+        <insert tableName="events">
+            <column name="entity_type" value="UNIT"/>
+            <column name="event_operation" value="CREATE"/>
+            <column name="entity_id" valueNumeric="6"/>
+            <column name="description" value="Unit created: 3 rooms, HOME, floor 2"/>
+        </insert>
+        <insert tableName="events">
+            <column name="entity_type" value="UNIT"/>
+            <column name="event_operation" value="CREATE"/>
+            <column name="entity_id" valueNumeric="7"/>
+            <column name="description" value="Unit created: 5 rooms, HOME, floor 1"/>
+        </insert>
+        <insert tableName="events">
+            <column name="entity_type" value="UNIT"/>
+            <column name="event_operation" value="CREATE"/>
+            <column name="entity_id" valueNumeric="8"/>
+            <column name="description" value="Unit created: 2 rooms, FLAT, floor 6"/>
+        </insert>
+        <insert tableName="events">
+            <column name="entity_type" value="UNIT"/>
+            <column name="event_operation" value="CREATE"/>
+            <column name="entity_id" valueNumeric="9"/>
+            <column name="description" value="Unit created: 1 room, APARTMENT, floor 7"/>
+        </insert>
+        <insert tableName="events">
+            <column name="entity_type" value="UNIT"/>
+            <column name="event_operation" value="CREATE"/>
+            <column name="entity_id" valueNumeric="10"/>
+            <column name="description" value="Unit created: 3 rooms, FLAT, floor 4"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

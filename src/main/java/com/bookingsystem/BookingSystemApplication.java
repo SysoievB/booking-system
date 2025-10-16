@@ -1,13 +1,42 @@
 package com.bookingsystem;
 
+import com.bookingsystem.api.dto.UnitCreateDto;
+import com.bookingsystem.model.AccommodationType;
+import com.bookingsystem.service.UnitService;
+import lombok.RequiredArgsConstructor;
+import lombok.val;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import java.util.Random;
+import java.util.stream.IntStream;
+
+@RequiredArgsConstructor
 @SpringBootApplication
-public class BookingSystemApplication {
+public class BookingSystemApplication implements CommandLineRunner {
+    private final UnitService unitService;
 
     public static void main(String[] args) {
         SpringApplication.run(BookingSystemApplication.class, args);
     }
 
+    @Override
+    public void run(String... args) throws Exception {
+        val random = new Random();
+
+        IntStream.rangeClosed(1, 90)
+                .forEach(index -> {
+                    val type = AccommodationType.values()[random.nextInt(AccommodationType.values().length)];
+                    val dto = new UnitCreateDto(
+                            random.nextInt(1, 5),
+                            type,
+                            random.nextInt(1, 11),
+                            50 + random.nextDouble(450),
+                            "Unit " + index + " - " + type + " with random features"
+                    );
+
+                    unitService.createUnit(dto);
+                });
+    }
 }
