@@ -1,8 +1,11 @@
 package com.bookingsystem.api.dto;
 
 import com.bookingsystem.model.AccommodationType;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
+
+import java.time.LocalDate;
 
 @Schema(description = "DTO for creating a new accommodation unit")
 public record UnitCreateDto(
@@ -45,6 +48,14 @@ public record UnitCreateDto(
         )
         @DecimalMin(value = "0.01", message = "Base cost must be greater than 0")
         double baseCost,
+
+        @Schema(
+                description = "Booking date for the unit (date when the unit is booked)",
+                example = "2025-10-20",
+                requiredMode = Schema.RequiredMode.NOT_REQUIRED
+        )
+        @JsonFormat(pattern = "yyyy-MM-dd")
+        LocalDate bookingDate,
 
         @Schema(
                 description = "Detailed description of the unit, including amenities and features",

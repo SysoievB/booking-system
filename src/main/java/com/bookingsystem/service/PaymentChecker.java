@@ -3,20 +3,24 @@ package com.bookingsystem.service;
 import com.bookingsystem.model.Booking;
 import com.bookingsystem.model.BookingStatus;
 import com.bookingsystem.model.Payment;
+import com.bookingsystem.model.PaymentStatus;
 import com.bookingsystem.properties.CancellationTimeProperties;
 import com.bookingsystem.repository.BookingRepository;
 import com.bookingsystem.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+import static com.bookingsystem.configuration.RedisConfig.UNIT_COUNT_CACHE;
+import static com.bookingsystem.model.EntityType.BOOKING;
 import static com.bookingsystem.model.EntityType.PAYMENT;
-import static com.bookingsystem.model.EventOperation.UPDATE;
+import static com.bookingsystem.model.EventOperation.DELETE;
 
 @Slf4j
 @Component
@@ -30,39 +34,64 @@ public class PaymentChecker {
 
     @Scheduled(cron = "${booking.scheduler.payment-check-cron}")
     @Transactional
+    @CacheEvict(value = UNIT_COUNT_CACHE, key = "'count'")
     public void checkExpiredPayments() {
         val now = LocalDateTime.now();
-        paymentRepository.findAll().stream()
-                .filter(p -> !p.isPaid())
-                .forEach(payment -> {
-                    val timeoutMinutes = cancellationTimeProperties.getMinutesValue();
-                    val deadline = payment.getPaymentTimestamp().plusMinutes(timeoutMinutes);
+        val timeoutMinutes = cancellationTimeProperties.getMinutesValue();
+        val deadline = now.minusMinutes(timeoutMinutes);
 
-                    if (now.isAfter(deadline)) {
-                        try {
-                            val booking = payment.getBooking();
-                            expireBooking(booking, payment);
-                            eventService.createEvent(
-                                    PAYMENT,
-                                    UPDATE,
-                                    payment.getId(),
-                                    String.format("Payment expired: %s", payment.getId())
-                            );
-                            log.info("Auto-expired booking {} due to {}-minute timeout", booking.getId(), timeoutMinutes);
-                        } catch (Exception e) {
-                            log.error("Error expiring booking for payment {}: {}", payment.getId(), e.getMessage());
-                        }
+        bookingRepository.findExpiredBookings(deadline)
+                .forEach(booking -> {
+                    val paymentOptional = paymentRepository.findByBookingId(booking.getId());
+
+                    /*if (paymentOptional.isPresent() && paymentOptional.get().getStatus() == PaymentStatus.COMPLETED) {
+                        return;
+                    }*/
+
+                    if (paymentOptional.isPresent() && paymentOptional.get().getStatus() != PaymentStatus.COMPLETED) {
+                        expireBookingWithPayment(booking, paymentOptional.get());
+                    } else {
+                        expireBookingWithoutPayment(booking);
                     }
                 });
     }
 
-    private void expireBooking(Booking booking, Payment payment) {
+    private void expireBookingWithPayment(Booking booking, Payment payment) {
         booking.getUnits().forEach(unit -> unit.setBooking(null));
         unitService.setUnitsBookingStatus(booking.getUnits(), BookingStatus.AVAILABLE);
 
         paymentRepository.delete(payment);
         bookingRepository.delete(booking);
 
-        log.info("Expired booking {} due to payment timeout", booking.getId());
+        eventService.createEvent(
+                PAYMENT,
+                DELETE,
+                payment.getId(),
+                String.format("Payment expired: %s", payment.getId())
+        );
+        eventService.createEvent(
+                BOOKING,
+                DELETE,
+                booking.getId(),
+                String.format("Booking expired without payment: %s", booking.getId())
+        );
+
+        log.info("Expired booking {} with payment due to timeout", booking.getId());
+    }
+
+    private void expireBookingWithoutPayment(Booking booking) {
+        booking.getUnits().forEach(unit -> unit.setBooking(null));
+        unitService.setUnitsBookingStatus(booking.getUnits(), BookingStatus.AVAILABLE);
+
+        bookingRepository.delete(booking);
+
+        eventService.createEvent(
+                BOOKING,
+                DELETE,
+                booking.getId(),
+                String.format("Booking expired without payment: %s", booking.getId())
+        );
+
+        log.info("Expired booking {} without payment", booking.getId());
     }
 }

@@ -9,14 +9,6 @@ import java.util.Set;
 @Schema(description = "DTO for creating a new booking")
 public record BookingCreateDto(
         @Schema(
-                description = "ID of the payment associated with this booking",
-                example = "1",
-                requiredMode = Schema.RequiredMode.REQUIRED
-        )
-        @NotNull(message = "Payment ID is required")
-        Long paymentId,
-
-        @Schema(
                 description = "Set of unit IDs to be included in this booking",
                 example = "[1, 2, 3]",
                 requiredMode = Schema.RequiredMode.REQUIRED,

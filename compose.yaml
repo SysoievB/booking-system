@@ -8,8 +8,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/booking_system
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: pass
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     depends_on:
       - postgres
       - redis

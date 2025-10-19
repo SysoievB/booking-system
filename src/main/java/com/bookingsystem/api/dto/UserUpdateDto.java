@@ -30,4 +30,5 @@ public record UserUpdateDto(
         @Email(message = "Email must be a valid email address", regexp = EMAIL_PATTERN)
         @Size(max = 100, message = "Email cannot exceed 100 characters")
         String email
-) {}
+) {
+}

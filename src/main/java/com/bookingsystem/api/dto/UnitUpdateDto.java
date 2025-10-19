@@ -1,7 +1,6 @@
 package com.bookingsystem.api.dto;
 
 import com.bookingsystem.model.AccommodationType;
-import com.bookingsystem.model.Booking;
 import com.bookingsystem.model.BookingStatus;
 import io.micrometer.common.lang.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -44,13 +43,13 @@ public record UnitUpdateDto(
         @Schema(
                 description = "Floor number where the unit is located. If null, remains unchanged",
                 example = "3",
-                minimum = "0",
-                maximum = "50",
+                minimum = "1",
+                maximum = "10",
                 requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
         @Nullable
-        @Min(value = 0, message = "Floor must be at least 0")
-        @Max(value = 50, message = "Floor cannot exceed 50")
+        @Min(value = 1, message = "Floor must be at least 0")
+        @Max(value = 10, message = "Floor cannot exceed 10")
         Integer floor,
 
         @Schema(
@@ -65,11 +64,11 @@ public record UnitUpdateDto(
         @Schema(
                 description = "Base cost per night for the unit in USD. If null, remains unchanged",
                 example = "150.00",
-                minimum = "0.01",
+                minimum = "100.00",
                 requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
         @Nullable
-        @DecimalMin(value = "0.01", message = "Base cost must be greater than 0")
+        @DecimalMin(value = "100.00", message = "Base cost must be greater than 100")
         Double baseCost,
 
         @Schema(
@@ -81,13 +80,6 @@ public record UnitUpdateDto(
         )
         @Nullable
         @Size(min = 10, max = 1000, message = "Description must be between 10 and 1000 characters")
-        String description,
-
-        @Schema(
-                description = "Associated booking object. If null, remains unchanged",
-                requiredMode = Schema.RequiredMode.NOT_REQUIRED
-        )
-        @Nullable
-        Booking booking
+        String description
 ) {
 }

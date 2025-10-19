@@ -8,10 +8,13 @@ import lombok.val;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.time.LocalDate;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+@EnableScheduling
 @RequiredArgsConstructor
 @SpringBootApplication
 public class BookingSystemApplication implements CommandLineRunner {
@@ -33,6 +36,7 @@ public class BookingSystemApplication implements CommandLineRunner {
                             type,
                             random.nextInt(1, 11),
                             50 + random.nextDouble(450),
+                            LocalDate.now().minusYears(1).plusDays(index),
                             "Unit " + index + " - " + type + " with random features"
                     );
 

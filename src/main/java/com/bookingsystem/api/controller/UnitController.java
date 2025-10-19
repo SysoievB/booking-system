@@ -1,6 +1,5 @@
 package com.bookingsystem.api.controller;
 
-import com.bookingsystem.api.dto.BookingUpdateDto;
 import com.bookingsystem.api.dto.UnitCreateDto;
 import com.bookingsystem.api.dto.UnitUpdateDto;
 import com.bookingsystem.model.AccommodationType;
@@ -18,11 +17,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.data.web.SortDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +25,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -153,12 +147,9 @@ public class UnitController {
             @RequestParam(required = false) LocalDate to,
 
             @Parameter(description = "Page number")
-            @SortDefault(sort = "id", direction = Sort.Direction.ASC)
-            @PageableDefault(size = 15) Pageable pageable
+            @RequestParam(required = false) @Nullable Pageable pageable
     ) {
-        val units = unitService.searchUnits(
-                numberOfRooms, type, minCost, maxCost, from, to, pageable
-        );
+        val units = unitService.searchUnits(numberOfRooms, type, minCost, maxCost, from, to, pageable);
         return ResponseEntity.ok(units);
     }
 

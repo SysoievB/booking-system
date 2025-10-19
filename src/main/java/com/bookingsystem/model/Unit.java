@@ -57,13 +57,15 @@ public class Unit {
             AccommodationType type,
             int floor,
             double baseCost,
+            LocalDate bookingDate,
             String description
     ) {
         this.numberOfRooms = numberOfRooms;
         this.type = type;
         this.status = BookingStatus.AVAILABLE;
         this.floor = floor;
-        this.baseCost = baseCost;
+        this.bookingDate = bookingDate;
+        this.baseCost = Math.round(baseCost * 1.15 * 100.0) / 100.0;
         this.totalCost = getTotalCost(baseCost);
         this.description = Optional.ofNullable(description).orElse("");
     }
@@ -75,24 +77,21 @@ public class Unit {
             @Nullable Integer floor,
             @Nullable LocalDate bookingDate,
             @Nullable Double baseCost,
-            @Nullable String description,
-            @Nullable Booking booking
+            @Nullable String description
     ) {
         this.numberOfRooms = Optional.ofNullable(numberOfRooms).orElse(this.numberOfRooms);
         this.type = Optional.ofNullable(type).orElse(this.type);
         this.status = Optional.ofNullable(status).orElse(this.status);
         this.floor = Optional.ofNullable(floor).orElse(this.floor);
         this.bookingDate = Optional.ofNullable(bookingDate).orElse(this.bookingDate);
-        this.baseCost = Optional.ofNullable(baseCost).orElse(this.baseCost);
+        this.baseCost = Optional.ofNullable(baseCost).map(cost -> Math.round(cost * 1.15 * 100.0) / 100.0).orElse(this.baseCost);
         this.totalCost = Optional.ofNullable(baseCost).map(this::getTotalCost).orElse(this.totalCost);
         this.description = Optional.ofNullable(description).orElse(this.description);
-        this.booking = Optional.ofNullable(booking).orElse(this.booking);
-
         return this;
     }
 
     public double getTotalCost(double cost) {
         //baseCost + 15% system markup
-        return cost * 1.15;
+        return Math.round(cost * 1.15 * 100.0) / 100.0;
     }
 }

@@ -33,7 +33,7 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
             Pageable pageable
     );
 
-    @Query("SELECT COUNT(u) FROM Unit u WHERE u.type = 'AVAILABLE'")
+    @Query("SELECT COUNT(distinct u) FROM Unit u WHERE u.status = 'AVAILABLE'")
     long countAvailableUnits();
 }
 

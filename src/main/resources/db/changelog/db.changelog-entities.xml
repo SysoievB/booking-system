@@ -38,6 +38,9 @@
             <column name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
             <column name="user_id" type="BIGINT">
                 <constraints nullable="false"
                              foreignKeyName="fk_bookings_user"
@@ -64,7 +67,9 @@
             <column name="floor" type="INT">
                 <constraints nullable="false"/>
             </column>
-            <column name="booking_date" type="DATE"/>
+            <column name="booking_date" type="DATE">
+                <constraints nullable="true"/>
+            </column>
             <column name="version" type="INT" defaultValue="0">
                 <constraints nullable="false"/>
             </column>
@@ -165,6 +170,7 @@
             <column name="number_of_rooms" valueNumeric="2"/>
             <column name="accommodation_type" value="FLAT"/>
             <column name="booking_status" value="AVAILABLE"/>
+            <column name="booking_date" valueDate="2025-07-15"/>
             <column name="floor" valueNumeric="3"/>
             <column name="base_cost" valueNumeric="100.00"/>
             <column name="total_cost" valueNumeric="115.00"/>
@@ -174,6 +180,7 @@
             <column name="number_of_rooms" valueNumeric="3"/>
             <column name="accommodation_type" value="APARTMENT"/>
             <column name="booking_status" value="AVAILABLE"/>
+            <column name="booking_date" value="2025-08-15"/>
             <column name="floor" valueNumeric="5"/>
             <column name="base_cost" valueNumeric="150.00"/>
             <column name="total_cost" valueNumeric="172.50"/>
@@ -183,6 +190,7 @@
             <column name="number_of_rooms" valueNumeric="4"/>
             <column name="accommodation_type" value="HOME"/>
             <column name="booking_status" value="AVAILABLE"/>
+            <column name="booking_date" value="2025-07-16"/>
             <column name="floor" valueNumeric="1"/>
             <column name="base_cost" valueNumeric="200.00"/>
             <column name="total_cost" valueNumeric="230.00"/>
@@ -192,6 +200,7 @@
             <column name="number_of_rooms" valueNumeric="1"/>
             <column name="accommodation_type" value="FLAT"/>
             <column name="booking_status" value="AVAILABLE"/>
+            <column name="booking_date" value="2025-07-17"/>
             <column name="floor" valueNumeric="2"/>
             <column name="base_cost" valueNumeric="80.00"/>
             <column name="total_cost" valueNumeric="92.00"/>
@@ -201,6 +210,7 @@
             <column name="number_of_rooms" valueNumeric="2"/>
             <column name="accommodation_type" value="APARTMENT"/>
             <column name="booking_status" value="AVAILABLE"/>
+            <column name="booking_date" value="2025-07-18"/>
             <column name="floor" valueNumeric="4"/>
             <column name="base_cost" valueNumeric="120.00"/>
             <column name="total_cost" valueNumeric="138.00"/>
@@ -210,6 +220,7 @@
             <column name="number_of_rooms" valueNumeric="3"/>
             <column name="accommodation_type" value="HOME"/>
             <column name="booking_status" value="AVAILABLE"/>
+            <column name="booking_date" value="2025-07-19"/>
             <column name="floor" valueNumeric="2"/>
             <column name="base_cost" valueNumeric="180.00"/>
             <column name="total_cost" valueNumeric="207.00"/>
@@ -219,6 +230,7 @@
             <column name="number_of_rooms" valueNumeric="5"/>
             <column name="accommodation_type" value="HOME"/>
             <column name="booking_status" value="AVAILABLE"/>
+            <column name="booking_date" value="2025-08-14"/>
             <column name="floor" valueNumeric="1"/>
             <column name="base_cost" valueNumeric="250.00"/>
             <column name="total_cost" valueNumeric="287.50"/>
@@ -228,6 +240,7 @@
             <column name="number_of_rooms" valueNumeric="2"/>
             <column name="accommodation_type" value="FLAT"/>
             <column name="booking_status" value="AVAILABLE"/>
+            <column name="booking_date" value="2025-08-13"/>
             <column name="floor" valueNumeric="6"/>
             <column name="base_cost" valueNumeric="110.00"/>
             <column name="total_cost" valueNumeric="126.50"/>
@@ -237,6 +250,7 @@
             <column name="number_of_rooms" valueNumeric="1"/>
             <column name="accommodation_type" value="APARTMENT"/>
             <column name="booking_status" value="AVAILABLE"/>
+            <column name="booking_date" value="2025-08-12"/>
             <column name="floor" valueNumeric="7"/>
             <column name="base_cost" valueNumeric="90.00"/>
             <column name="total_cost" valueNumeric="103.50"/>
@@ -246,6 +260,7 @@
             <column name="number_of_rooms" valueNumeric="3"/>
             <column name="accommodation_type" value="FLAT"/>
             <column name="booking_status" value="AVAILABLE"/>
+            <column name="booking_date" value="2025-08-11"/>
             <column name="floor" valueNumeric="4"/>
             <column name="base_cost" valueNumeric="140.00"/>
             <column name="total_cost" valueNumeric="161.00"/>

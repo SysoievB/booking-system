@@ -1,21 +1,25 @@
 package com.bookingsystem.service;
 
-import com.bookingsystem.model.Payment;
+import com.bookingsystem.api.dto.PaymentResponseDto;
+import com.bookingsystem.exceptions.BookingNotFoundException;
+import com.bookingsystem.exceptions.PaymentNotFoundException;
+import com.bookingsystem.mapper.PaymentMapper;
 import com.bookingsystem.repository.BookingRepository;
 import com.bookingsystem.repository.PaymentRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static com.bookingsystem.configuration.RedisConfig.UNIT_COUNT_CACHE;
 import static com.bookingsystem.model.BookingStatus.BOOKED;
 import static com.bookingsystem.model.EntityType.PAYMENT;
 import static com.bookingsystem.model.EventOperation.CREATE;
-import static com.bookingsystem.model.EventOperation.DELETE;
 
 @Service
 @RequiredArgsConstructor
@@ -25,38 +29,34 @@ public class PaymentService {
     private final BookingRepository bookingRepository;
     private final EventService eventService;
     private final UnitService unitService;
+    private final PaymentMapper paymentMapper;
 
     /**
-     * EMULATION of payment processing
-     * This is called by the user to confirm payment
-     * Units remain RESERVED, status changes to COMPLETED
+     * EMULATION of payment processing</br>
+     * This is called by the user to confirm payment</br>
+     * Units remain BOOKED, status changes to COMPLETED</br>
      */
-    @Transactional
-    public Payment processPayment(Long bookingId, Long userId) {
-        // 1. Get booking
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @CacheEvict(value = UNIT_COUNT_CACHE, key = "'count'")
+    public PaymentResponseDto processPayment(Long bookingId, Long userId) {
         val booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new EntityNotFoundException("Booking not found with id: " + bookingId));
+                .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + bookingId));
 
-        // 2. Verify ownership
         if (!booking.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Only the booking owner can process payment");
+            throw new IllegalArgumentException("Only the booking owner can process payment");
         }
 
-        // 3. Get payment
         val payment = paymentRepository.findByBookingId(bookingId)
-                .orElseThrow(() -> new EntityNotFoundException("Payment not found for booking: " + bookingId));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found for booking: " + bookingId));
 
-        // 4. Check if already paid
         if (payment.isPaid()) {
-            throw new RuntimeException("Payment already completed");
+            throw new IllegalStateException("Payment already completed");
         }
 
-        // 5. Check if expired
         if (payment.isExpired()) {
-            throw new RuntimeException("Payment deadline has passed. Booking has been cancelled.");
+            throw new IllegalStateException("Payment deadline has passed. Booking has been cancelled.");
         }
 
-        // 6. Mark payment as completed
         payment.markAsPaid();
         unitService.setUnitsBookingStatus(booking.getUnits(), BOOKED);
 
@@ -72,37 +72,19 @@ public class PaymentService {
         );
         log.info("Payment completed at: {}", paid.getPaidAt());
 
-        return paid;
+        return paymentMapper.toDto(paid);
     }
 
-    @Transactional(readOnly = true)
-    public Payment getPaymentById(Long id) {
+    public PaymentResponseDto getPaymentById(Long id) {
         return paymentRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Payment not found with id: " + id));
+                .map(paymentMapper::toDto)
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found with id: " + id));
     }
 
-    @Transactional(readOnly = true)
-    public Payment getPaymentByBookingId(Long bookingId) {
-        return paymentRepository.findByBookingId(bookingId)
-                .orElseThrow(() -> new EntityNotFoundException("Payment not found for booking: " + bookingId));
-    }
-
-    @Transactional(readOnly = true)
-    public List<Payment> getAllPayments() {
-        return paymentRepository.findAll();
-    }
-
-    @Transactional
-    public void delete(Long id) {
-        if (!paymentRepository.existsById(id)) {
-            throw new EntityNotFoundException("Payment not found with id: " + id);
-        }
-        paymentRepository.deleteById(id);
-        eventService.createEvent(
-                PAYMENT,
-                DELETE,
-                id,
-                String.format("Payment deleted: %s", id)
-        );
+    public List<PaymentResponseDto> getAllPayments() {
+        return paymentRepository.findAll()
+                .stream()
+                .map(paymentMapper::toDto)
+                .toList();
     }
 }

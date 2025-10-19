@@ -2,15 +2,16 @@ package com.bookingsystem.service;
 
 import com.bookingsystem.api.dto.UnitCreateDto;
 import com.bookingsystem.api.dto.UnitUpdateDto;
+import com.bookingsystem.exceptions.UnitNotFoundException;
 import com.bookingsystem.model.AccommodationType;
 import com.bookingsystem.model.BookingStatus;
 import com.bookingsystem.model.Unit;
 import com.bookingsystem.repository.UnitRepository;
-import jakarta.persistence.EntityNotFoundException;
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.bookingsystem.configuration.RedisConfig.UNIT_COUNT_CACHE;
@@ -34,12 +36,14 @@ public class UnitService {
     private final EventService eventService;
 
     @Transactional
+    @CacheEvict(value = UNIT_COUNT_CACHE, key = "'count'")
     public Unit createUnit(UnitCreateDto dto) {
         val newUnit = new Unit(
                 dto.numberOfRooms(),
                 dto.type(),
                 dto.floor(),
                 dto.baseCost(),
+                dto.bookingDate(),
                 dto.description()
         );
 
@@ -64,8 +68,8 @@ public class UnitService {
                                 dto.floor(),
                                 dto.bookingDate(),
                                 dto.baseCost(),
-                                dto.description(),
-                                dto.booking()
+                                dto.description()
+                                //booking
                         )
                 )
                 .map(unitRepository::save)
@@ -78,21 +82,18 @@ public class UnitService {
                     );
                     return unit;
                 })
-                .orElseThrow(() -> new EntityNotFoundException("Unit not found with id: " + unitId));
+                .orElseThrow(() -> new UnitNotFoundException("Unit not found with id: " + unitId));
     }
 
-    @Transactional(readOnly = true)
     public Unit getUnitById(Long id) {
         return unitRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Unit not found with id: " + id));
+                .orElseThrow(() -> new UnitNotFoundException("Unit not found with id: " + id));
     }
 
-    @Transactional(readOnly = true)
     public List<Unit> getAllUnits() {
         return unitRepository.findAll();
     }
 
-    @Transactional(readOnly = true)
     public Page<Unit> searchUnits(
             Integer numberOfRooms,
             AccommodationType type,
@@ -100,20 +101,20 @@ public class UnitService {
             Double maxCost,
             LocalDate from,
             LocalDate to,
-            Pageable pageable
+            @Nullable Pageable pageable
     ) {
-        return unitRepository.searchUnits(numberOfRooms, type, minCost, maxCost, from, to, pageable);
+        return unitRepository.searchUnits(numberOfRooms, type, minCost, maxCost, from, to, Optional.ofNullable(pageable).orElse(Pageable.unpaged()));
     }
 
-    @Transactional(readOnly = true)
     public Set<Unit> findAllById(Set<Long> ids) {
         return new HashSet<>(unitRepository.findAllById(ids));
     }
 
     @Transactional
+    @CacheEvict(value = UNIT_COUNT_CACHE, key = "'count'")
     public void deleteUnit(Long unitId) {
         if (!unitRepository.existsById(unitId)) {
-            throw new EntityNotFoundException("Unit not found with id: " + unitId);
+            throw new UnitNotFoundException("Unit not found with id: " + unitId);
         }
         unitRepository.deleteById(unitId);
         eventService.createEvent(
@@ -129,17 +130,17 @@ public class UnitService {
         units.forEach(unit -> {
             unit.setStatus(bookingStatus);
             unitRepository.save(unit);
+            eventService.createEvent(
+                    UNIT,
+                    UPDATE,
+                    unit.getId(),
+                    String.format("Unit updated: %s", unit.getId())
+            );
         });
     }
 
     @Cacheable(value = UNIT_COUNT_CACHE, key = "'count'")
     public long getAvailableUnitsCount() {
-        return unitRepository.countAvailableUnits();
-    }
-
-    //TODO check it - do i need it somewhere
-    @CachePut(value = UNIT_COUNT_CACHE, key = "'count'")
-    public long refreshAvailableUnitsCount() {
         return unitRepository.countAvailableUnits();
     }
 }

@@ -45,7 +45,7 @@ public class Payment {
     public Payment(@NotNull Booking booking, LocalDateTime paymentDeadline) {
         this.booking = booking;
         this.status = PaymentStatus.PENDING;
-        this.paid = isPaid(booking.getUnits());
+        this.paid = false;
         this.paymentAmount = getTotalAmount(booking.getUnits());
         this.amountOfBookedDays = getAmountOfBookedDays(booking.getUnits());
         this.paymentTimestamp = LocalDateTime.now();
@@ -55,10 +55,11 @@ public class Payment {
     public void markAsPaid() {
         this.status = PaymentStatus.COMPLETED;
         this.paidAt = LocalDateTime.now();
+        this.paid = true;
     }
 
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(paymentDeadline) && status == PaymentStatus.PENDING;
+        return LocalDateTime.now().isAfter(paymentDeadline) && (status == PaymentStatus.PENDING );
     }
 
     private double getTotalAmount(Set<Unit> units) {
@@ -69,10 +70,5 @@ public class Payment {
 
     private int getAmountOfBookedDays(Set<Unit> units) {
         return units.size();
-    }
-
-    private boolean isPaid(Set<Unit> units) {
-        return units.stream()
-                .allMatch(unit -> unit.getStatus().equals(BookingStatus.BOOKED));
     }
 }

@@ -1,6 +1,6 @@
 package com.bookingsystem.api.controller;
 
-import com.bookingsystem.model.Payment;
+import com.bookingsystem.api.dto.PaymentResponseDto;
 import com.bookingsystem.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -40,7 +40,7 @@ public class PaymentController {
             @ApiResponse(responseCode = "404", description = "Booking or payment not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Payment> processPayment(
+    public ResponseEntity<PaymentResponseDto> processPayment(
             @Parameter(description = "Booking ID", required = true)
             @PathVariable Long bookingId,
 
@@ -61,29 +61,11 @@ public class PaymentController {
             @ApiResponse(responseCode = "404", description = "Payment not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Payment> getPaymentById(
+    public ResponseEntity<PaymentResponseDto> getPaymentById(
             @Parameter(description = "Payment ID", required = true)
             @PathVariable Long id
     ) {
         val payment = paymentService.getPaymentById(id);
-        return ResponseEntity.ok(payment);
-    }
-
-    @GetMapping("/bookings/{bookingId}")
-    @Operation(
-            summary = "Get payment by booking ID",
-            description = "Retrieve payment information for a specific booking"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Payment found"),
-            @ApiResponse(responseCode = "404", description = "Payment not found for this booking"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
-    public ResponseEntity<Payment> getPaymentByBookingId(
-            @Parameter(description = "Booking ID", required = true)
-            @PathVariable Long bookingId
-    ) {
-        val payment = paymentService.getPaymentByBookingId(bookingId);
         return ResponseEntity.ok(payment);
     }
 
@@ -96,26 +78,8 @@ public class PaymentController {
             @ApiResponse(responseCode = "200", description = "Payments retrieved successfully"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<List<Payment>> getAllPayments() {
+    public ResponseEntity<List<PaymentResponseDto>> getAllPayments() {
         val payments = paymentService.getAllPayments();
         return ResponseEntity.ok(payments);
-    }
-
-    @DeleteMapping("/{id}")
-    @Operation(
-            summary = "Delete payment",
-            description = "Endpoint to delete a payment record. Use with caution."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Payment deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Payment not found"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
-    public ResponseEntity<Void> deletePayment(
-            @Parameter(description = "Payment ID", required = true)
-            @PathVariable Long id
-    ) {
-        paymentService.delete(id);
-        return ResponseEntity.noContent().build();
     }
 }

@@ -55,7 +55,7 @@ public class BookingController {
     @PutMapping("/{id}")
     @Operation(
             summary = "Update booking",
-            description = "Update an existing booking by changing units or user. " +
+            description = "Update an existing booking by changing units. " +
                     "Can only update bookings that haven't been paid yet. " +
                     "Old units will be freed and new units will be reserved.",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -135,24 +135,5 @@ public class BookingController {
     public ResponseEntity<List<Booking>> getAllBookings() {
         val bookings = bookingService.getAllBookings();
         return ResponseEntity.ok(bookings);
-    }
-
-    @DeleteMapping("/{id}")
-    @Operation(
-            summary = "Delete booking",
-            description = "Endpoint to delete any booking regardless of status. " +
-                    "Use with caution - does not perform ownership checks."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Booking deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Booking not found"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
-    public ResponseEntity<Void> deleteBooking(
-            @Parameter(description = "Booking ID", required = true)
-            @PathVariable Long id
-    ) {
-        bookingService.deleteBooking(id);
-        return ResponseEntity.noContent().build();
     }
 }

@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 
@@ -25,7 +26,7 @@ public class Booking {
     Long id;
 
     @NotEmpty
-    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "booking", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     Set<Unit> units;
 
     @NotNull
@@ -34,14 +35,16 @@ public class Booking {
     @JsonIgnore
     User user;
 
-    public Booking(Set<Unit> units, User user){
+    LocalDateTime createdAt;
+
+    public Booking(Set<Unit> units, User user) {
         this.units = units;
         this.user = user;
+        this.createdAt = LocalDateTime.now();
     }
 
-    public Booking update(@Nullable Set<Unit> units, @Nullable User user){
+    public Booking update(@Nullable Set<Unit> units) {
         this.units = Optional.ofNullable(units).orElse(this.units);
-        this.user = Optional.ofNullable(user).orElse(this.user);
         return this;
     }
 }
