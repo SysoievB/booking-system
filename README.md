@@ -107,7 +107,22 @@ Total: 100 units ready for testing
 - Mockito - Mocking framework
 - Testcontainers - Container-based integration tests
 
-Build & DevOps
+#### Build & DevOps
 
 - Gradle - Build automation
 - Docker Compose - Containerization
+
+#### Start Docker Services (PostgreSQL & Redis)
+```bash
+    docker-compose up
+```
+
+#### Stop Docker Services (PostgreSQL & Redis)
+```bash
+    docker-compose down
+```
+
+#### Build Application
+```bash
+    ./gradlew clean build
+```
