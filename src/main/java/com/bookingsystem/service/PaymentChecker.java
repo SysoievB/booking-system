@@ -1,9 +1,7 @@
 package com.bookingsystem.service;
 
 import com.bookingsystem.model.Booking;
-import com.bookingsystem.model.BookingStatus;
 import com.bookingsystem.model.Payment;
-import com.bookingsystem.model.PaymentStatus;
 import com.bookingsystem.properties.CancellationTimeProperties;
 import com.bookingsystem.repository.BookingRepository;
 import com.bookingsystem.repository.PaymentRepository;
@@ -18,9 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 import static com.bookingsystem.configuration.RedisConfig.UNIT_COUNT_CACHE;
+import static com.bookingsystem.model.BookingStatus.AVAILABLE;
 import static com.bookingsystem.model.EntityType.BOOKING;
 import static com.bookingsystem.model.EntityType.PAYMENT;
 import static com.bookingsystem.model.EventOperation.DELETE;
+import static com.bookingsystem.model.PaymentStatus.COMPLETED;
 
 @Slf4j
 @Component
@@ -42,23 +42,22 @@ public class PaymentChecker {
 
         bookingRepository.findExpiredBookings(deadline)
                 .forEach(booking -> {
-                    val paymentOptional = paymentRepository.findByBookingId(booking.getId());
-
-                    /*if (paymentOptional.isPresent() && paymentOptional.get().getStatus() == PaymentStatus.COMPLETED) {
-                        return;
-                    }*/
-
-                    if (paymentOptional.isPresent() && paymentOptional.get().getStatus() != PaymentStatus.COMPLETED) {
-                        expireBookingWithPayment(booking, paymentOptional.get());
-                    } else {
-                        expireBookingWithoutPayment(booking);
-                    }
+                    paymentRepository.findByBookingId(booking.getId())
+                            .ifPresentOrElse(
+                                    payment -> {
+                                        if (payment.getStatus() == COMPLETED) {
+                                            return;
+                                        }
+                                        expireBookingWithPayment(booking, payment);
+                                    },
+                                    () -> expireBookingWithoutPayment(booking)
+                            );
                 });
     }
 
     private void expireBookingWithPayment(Booking booking, Payment payment) {
         booking.getUnits().forEach(unit -> unit.setBooking(null));
-        unitService.setUnitsBookingStatus(booking.getUnits(), BookingStatus.AVAILABLE);
+        unitService.setUnitsBookingStatus(booking.getUnits(), AVAILABLE);
 
         paymentRepository.delete(payment);
         bookingRepository.delete(booking);
@@ -81,7 +80,7 @@ public class PaymentChecker {
 
     private void expireBookingWithoutPayment(Booking booking) {
         booking.getUnits().forEach(unit -> unit.setBooking(null));
-        unitService.setUnitsBookingStatus(booking.getUnits(), BookingStatus.AVAILABLE);
+        unitService.setUnitsBookingStatus(booking.getUnits(), AVAILABLE);
 
         bookingRepository.delete(booking);
 
