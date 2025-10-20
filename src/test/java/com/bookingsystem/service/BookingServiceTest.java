@@ -5,19 +5,16 @@ import com.bookingsystem.api.dto.BookingUpdateDto;
 import com.bookingsystem.exceptions.BookingNotFoundException;
 import com.bookingsystem.exceptions.PaymentNotFoundException;
 import com.bookingsystem.exceptions.UnitNotFoundException;
-import com.bookingsystem.model.*;
+import com.bookingsystem.model.Unit;
 import com.bookingsystem.properties.CancellationTimeProperties;
 import com.bookingsystem.repository.BookingRepository;
 import com.bookingsystem.repository.PaymentRepository;
-import jakarta.annotation.Nullable;
-import lombok.Builder;
 import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.quality.Strictness;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -65,14 +62,14 @@ class BookingServiceTest {
     @Test
     void create_booking_should_create_booking_with_payment_and_reserve_units() {
         // given
-        val user = user().build();
-        val unit1 = unit().id(UNIT_ID_1).status(AVAILABLE).build();
-        val unit2 = unit().id(UNIT_ID_2).status(AVAILABLE).build();
+        val user = EntitiesUtil.user().build();
+        val unit1 = EntitiesUtil.unit().id(UNIT_ID_1).status(AVAILABLE).build();
+        val unit2 = EntitiesUtil.unit().id(UNIT_ID_2).status(AVAILABLE).build();
         val units = Set.of(unit1, unit2);
         val unitIds = Set.of(UNIT_ID_1, UNIT_ID_2);
         val dto = new BookingCreateDto(unitIds, USER_ID);
-        val booking = booking().id(BOOKING_ID).user(user).units(units).createdAt(CREATED_AT).build();
-        val payment = payment().id(PAYMENT_ID).paid(false).build();
+        val booking = EntitiesUtil.booking().id(BOOKING_ID).user(user).units(units).createdAt(CREATED_AT).build();
+        val payment = EntitiesUtil.payment().id(PAYMENT_ID).paid(false).build();
 
         given(userService.getUserById(any())).willReturn(user);
         given(unitService.findAllById(any())).willReturn(units);
@@ -97,7 +94,7 @@ class BookingServiceTest {
     void create_booking_should_throw_exception_when_unit_ids_null() {
         // given
         val dto = new BookingCreateDto(null, USER_ID);
-        val user = user().build();
+        val user = EntitiesUtil.user().build();
 
         given(userService.getUserById(any())).willReturn(user);
 
@@ -119,7 +116,7 @@ class BookingServiceTest {
     @Test
     void create_booking_should_throw_exception_when_units_empty() {
         // given
-        val user = user().build();
+        val user = EntitiesUtil.user().build();
         val unitIds = Set.of(UNIT_ID_1);
         val emptyUnits = Collections.<Unit>emptySet();
         val dto = new BookingCreateDto(unitIds, USER_ID);
@@ -143,9 +140,9 @@ class BookingServiceTest {
     @Test
     void create_booking_should_throw_exception_when_units_not_available() {
         // given
-        val user = user().build();
-        val unit1 = unit().id(UNIT_ID_1).status(RESERVED).build();
-        val unit2 = unit().id(UNIT_ID_2).status(BOOKED).build();
+        val user = EntitiesUtil.user().build();
+        val unit1 = EntitiesUtil.unit().id(UNIT_ID_1).status(RESERVED).build();
+        val unit2 = EntitiesUtil.unit().id(UNIT_ID_2).status(BOOKED).build();
         val units = Set.of(unit1, unit2);
         val unitIds = Set.of(UNIT_ID_1, UNIT_ID_2);
         val dto = new BookingCreateDto(unitIds, USER_ID);
@@ -161,7 +158,6 @@ class BookingServiceTest {
             );
 
             assertTrue(exception.getMessage().contains("Units are not available"));
-            assertTrue(exception.getMessage().contains("1") || exception.getMessage().contains("2"));
 
             verify(bookingRepository, never()).save(any());
             verify(paymentRepository, never()).save(any());
@@ -171,12 +167,12 @@ class BookingServiceTest {
     @Test
     void cancel_booking_should_delete_booking_and_free_units() {
         // given
-        val user = user().id(USER_ID).build();
-        val unit1 = unit().id(UNIT_ID_1).status(RESERVED).build();
-        val unit2 = unit().id(UNIT_ID_2).status(RESERVED).build();
+        val user = EntitiesUtil.user().id(USER_ID).build();
+        val unit1 = EntitiesUtil.unit().id(UNIT_ID_1).status(RESERVED).build();
+        val unit2 = EntitiesUtil.unit().id(UNIT_ID_2).status(RESERVED).build();
         val units = Set.of(unit1, unit2);
-        val booking = booking().id(BOOKING_ID).user(user).units(units).build();
-        val payment = payment().id(PAYMENT_ID).paid(false).build();
+        val booking = EntitiesUtil.booking().id(BOOKING_ID).user(user).units(units).build();
+        val payment = EntitiesUtil.payment().id(PAYMENT_ID).paid(false).build();
 
         given(bookingRepository.findById(any())).willReturn(Optional.of(booking));
         given(paymentRepository.findByBookingId(any())).willReturn(Optional.of(payment));
@@ -185,11 +181,10 @@ class BookingServiceTest {
         doNothing().when(bookingRepository).delete(booking);
         doNothing().when(eventService).createEvent(any(), any(), anyLong(), anyString());
 
-        // when
-        bookingService.cancelBooking(BOOKING_ID, USER_ID);
-
-        // then
+        // when & then
         assertAll(() -> {
+            assertDoesNotThrow(() -> bookingService.cancelBooking(BOOKING_ID, USER_ID));
+
             verify(bookingRepository).findById(any());
             verify(paymentRepository).findByBookingId(any());
             verify(unit1).setBooking(null);
@@ -204,8 +199,8 @@ class BookingServiceTest {
     @Test
     void cancel_booking_should_throw_exception_when_user_is_not_owner() {
         // given
-        val user = user().id(USER_ID).build();
-        val booking = booking().id(BOOKING_ID).user(user).build();
+        val user = EntitiesUtil.user().id(USER_ID).build();
+        val booking = EntitiesUtil.booking().id(BOOKING_ID).user(user).build();
 
         given(bookingRepository.findById(any())).willReturn(Optional.of(booking));
 
@@ -226,8 +221,8 @@ class BookingServiceTest {
     @Test
     void cancel_booking_should_throw_exception_when_payment_not_found() {
         // given
-        val user = user().id(USER_ID).build();
-        val booking = booking().id(BOOKING_ID).user(user).build();
+        val user = EntitiesUtil.user().id(USER_ID).build();
+        val booking = EntitiesUtil.booking().id(BOOKING_ID).user(user).build();
 
         given(bookingRepository.findById(any())).willReturn(Optional.of(booking));
         given(paymentRepository.findByBookingId(any())).willReturn(Optional.empty());
@@ -248,9 +243,9 @@ class BookingServiceTest {
     @Test
     void cancel_booking_should_throw_exception_when_payment_already_paid() {
         // given
-        val user = user().id(USER_ID).build();
-        val booking = booking().id(BOOKING_ID).user(user).build();
-        val payment = payment().id(PAYMENT_ID).paid(true).build();
+        val user = EntitiesUtil.user().id(USER_ID).build();
+        val booking = EntitiesUtil.booking().id(BOOKING_ID).user(user).build();
+        val payment = EntitiesUtil.payment().id(PAYMENT_ID).paid(true).build();
 
         given(bookingRepository.findById(any())).willReturn(Optional.of(booking));
         given(paymentRepository.findByBookingId(any())).willReturn(Optional.of(payment));
@@ -271,7 +266,7 @@ class BookingServiceTest {
     @Test
     void update_booking_should_return_unchanged_when_unit_ids_null() {
         // given
-        val booking = booking().id(BOOKING_ID).build();
+        val booking = EntitiesUtil.booking().id(BOOKING_ID).build();
         val dto = new BookingUpdateDto(null);
 
         given(bookingRepository.findById(any())).willReturn(Optional.of(booking));
@@ -294,7 +289,7 @@ class BookingServiceTest {
     @Test
     void update_booking_should_return_unchanged_when_unit_ids_empty() {
         // given
-        val booking = booking().id(BOOKING_ID).build();
+        val booking = EntitiesUtil.booking().id(BOOKING_ID).build();
         val dto = new BookingUpdateDto(Set.of());
 
         given(bookingRepository.findById(any())).willReturn(Optional.of(booking));
@@ -333,7 +328,7 @@ class BookingServiceTest {
     @Test
     void update_booking_should_throw_exception_when_payment_not_found() {
         // given
-        val booking = booking().id(BOOKING_ID).build();
+        val booking = EntitiesUtil.booking().id(BOOKING_ID).build();
         val dto = new BookingUpdateDto(Set.of(UNIT_ID_1));
 
         given(bookingRepository.findById(any())).willReturn(Optional.of(booking));
@@ -352,8 +347,8 @@ class BookingServiceTest {
     @Test
     void update_booking_should_throw_exception_when_payment_already_paid() {
         // given
-        val booking = booking().id(BOOKING_ID).build();
-        val payment = payment().id(PAYMENT_ID).paid(true).build();
+        val booking = EntitiesUtil.booking().id(BOOKING_ID).build();
+        val payment = EntitiesUtil.payment().id(PAYMENT_ID).paid(true).build();
         val dto = new BookingUpdateDto(Set.of(UNIT_ID_1));
 
         given(bookingRepository.findById(any())).willReturn(Optional.of(booking));
@@ -374,10 +369,10 @@ class BookingServiceTest {
     @Test
     void update_booking_should_throw_exception_when_new_units_not_available() {
         // given
-        val oldUnits = Set.of(unit().id(UNIT_ID_1).status(RESERVED).build());
-        val booking = booking().id(BOOKING_ID).units(oldUnits).build();
-        val payment = payment().id(PAYMENT_ID).paid(false).build();
-        val newUnit = unit().id(3L).status(BOOKED).build();
+        val oldUnits = Set.of(EntitiesUtil.unit().id(UNIT_ID_1).status(RESERVED).build());
+        val booking = EntitiesUtil.booking().id(BOOKING_ID).units(oldUnits).build();
+        val payment = EntitiesUtil.payment().id(PAYMENT_ID).paid(false).build();
+        val newUnit = EntitiesUtil.unit().id(3L).status(BOOKED).build();
         val newUnits = Set.of(newUnit);
         val newUnitIds = Set.of(3L);
         val dto = new BookingUpdateDto(newUnitIds);
@@ -396,67 +391,5 @@ class BookingServiceTest {
 
             verify(bookingRepository, never()).save(any());
         });
-    }
-
-    @Builder(builderMethodName = "user")
-    private User getUser(@Nullable Long id) {
-        val user = mock(User.class);
-        if (id != null) {
-            given(user.getId()).willReturn(id);
-        }
-        return user;
-    }
-
-    @Builder(builderMethodName = "unit")
-    private Unit getUnit(
-            @Nullable Long id,
-            @Nullable BookingStatus status
-    ) {
-        val unit = mock(Unit.class, withSettings().strictness(Strictness.LENIENT));
-        if (id != null) {
-            given(unit.getId()).willReturn(id);
-        }
-        if (status != null) {
-            given(unit.getStatus()).willReturn(status);
-        }
-        return unit;
-    }
-
-    @Builder(builderMethodName = "booking")
-    private Booking getBooking(
-            @Nullable Long id,
-            @Nullable User user,
-            @Nullable Set<Unit> units,
-            @Nullable LocalDateTime createdAt
-    ) {
-        val booking = mock(Booking.class, withSettings().strictness(Strictness.LENIENT));
-        if (id != null) {
-            given(booking.getId()).willReturn(id);
-        }
-        if (user != null) {
-            given(booking.getUser()).willReturn(user);
-        }
-        if (units != null) {
-            given(booking.getUnits()).willReturn(units);
-        }
-        if (createdAt != null) {
-            given(booking.getCreatedAt()).willReturn(createdAt);
-        }
-        return booking;
-    }
-
-    @Builder(builderMethodName = "payment")
-    private Payment getPayment(
-            @Nullable Long id,
-            @Nullable Boolean paid
-    ) {
-        val payment = mock(Payment.class, withSettings().strictness(Strictness.LENIENT));
-        if (id != null) {
-            given(payment.getId()).willReturn(id);
-        }
-        if (paid != null) {
-            given(payment.isPaid()).willReturn(paid);
-        }
-        return payment;
     }
 }

@@ -3,19 +3,14 @@ package com.bookingsystem.service;
 import com.bookingsystem.api.dto.UnitCreateDto;
 import com.bookingsystem.api.dto.UnitUpdateDto;
 import com.bookingsystem.exceptions.UnitNotFoundException;
-import com.bookingsystem.model.AccommodationType;
-import com.bookingsystem.model.BookingStatus;
 import com.bookingsystem.model.Unit;
 import com.bookingsystem.repository.UnitRepository;
-import jakarta.annotation.Nullable;
-import lombok.Builder;
 import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.quality.Strictness;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -58,7 +53,7 @@ class UnitServiceTest {
                 BOOKING_DATE,
                 DESCRIPTION
         );
-        val unit = unit().id(UNIT_ID).numberOfRooms(NUMBER_OF_ROOMS).type(APARTMENT).build();
+        val unit = EntitiesUtil.unit().id(UNIT_ID).numberOfRooms(NUMBER_OF_ROOMS).type(APARTMENT).build();
 
         given(unitRepository.save(any(Unit.class))).willReturn(unit);
         doNothing().when(eventService).createEvent(any(), any(), anyLong(), anyString());
@@ -78,7 +73,7 @@ class UnitServiceTest {
     @Test
     void update_unit_should_update_existing_unit_and_create_event() {
         // given
-        val existingUnit = unit().id(UNIT_ID).numberOfRooms(2).type(APARTMENT).status(AVAILABLE).build();
+        val existingUnit = EntitiesUtil.unit().id(UNIT_ID).numberOfRooms(2).type(APARTMENT).status(AVAILABLE).build();
         val dto = new UnitUpdateDto(
                 NUMBER_OF_ROOMS,
                 HOME,
@@ -126,7 +121,7 @@ class UnitServiceTest {
     @Test
     void get_unit_by_id_should_return_unit_when_exists() {
         // given
-        val unit = unit().id(UNIT_ID).numberOfRooms(NUMBER_OF_ROOMS).type(APARTMENT).build();
+        val unit = EntitiesUtil.unit().id(UNIT_ID).numberOfRooms(NUMBER_OF_ROOMS).type(APARTMENT).build();
         given(unitRepository.findById(any())).willReturn(Optional.of(unit));
 
         // when
@@ -201,9 +196,9 @@ class UnitServiceTest {
     @Test
     void set_units_booking_status_should_update_status_for_all_units() {
         // given
-        val unit1 = unit().id(1L).status(RESERVED).build();
-        val unit2 = unit().id(2L).status(RESERVED).build();
-        val unit3 = unit().id(3L).status(RESERVED).build();
+        val unit1 = EntitiesUtil.unit().id(1L).status(RESERVED).build();
+        val unit2 = EntitiesUtil.unit().id(2L).status(RESERVED).build();
+        val unit3 = EntitiesUtil.unit().id(3L).status(RESERVED).build();
         val units = Set.of(unit1, unit2, unit3);
 
         given(unitRepository.save(any())).willReturn(unit1);
@@ -219,46 +214,7 @@ class UnitServiceTest {
             verify(unit2).setStatus(BOOKED);
             verify(unit3).setStatus(BOOKED);
             verify(unitRepository, times(3)).save(any());
-            verifyNoInteractions(eventService);
+            verify(eventService, times(3)).createEvent(any(), any(), anyLong(), anyString());
         });
-    }
-
-    @Builder(builderMethodName = "unit")
-    private Unit getUnit(
-            @Nullable Long id,
-            @Nullable Integer numberOfRooms,
-            @Nullable AccommodationType type,
-            @Nullable BookingStatus status,
-            @Nullable Integer floor,
-            @Nullable Double baseCost,
-            @Nullable LocalDate bookingDate,
-            @Nullable String description
-    ) {
-        val unit = mock(Unit.class, withSettings().strictness(Strictness.LENIENT));
-        if (id != null) {
-            given(unit.getId()).willReturn(id);
-        }
-        if (numberOfRooms != null) {
-            given(unit.getNumberOfRooms()).willReturn(numberOfRooms);
-        }
-        if (type != null) {
-            given(unit.getType()).willReturn(type);
-        }
-        if (status != null) {
-            given(unit.getStatus()).willReturn(status);
-        }
-        if (floor != null) {
-            given(unit.getFloor()).willReturn(floor);
-        }
-        if (baseCost != null) {
-            given(unit.getBaseCost()).willReturn(baseCost);
-        }
-        if (bookingDate != null) {
-            given(unit.getBookingDate()).willReturn(bookingDate);
-        }
-        if (description != null) {
-            given(unit.getDescription()).willReturn(description);
-        }
-        return unit;
     }
 }

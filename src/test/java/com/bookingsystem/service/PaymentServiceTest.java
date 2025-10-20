@@ -4,23 +4,16 @@ import com.bookingsystem.api.dto.PaymentResponseDto;
 import com.bookingsystem.exceptions.BookingNotFoundException;
 import com.bookingsystem.exceptions.PaymentNotFoundException;
 import com.bookingsystem.mapper.PaymentMapper;
-import com.bookingsystem.model.Booking;
-import com.bookingsystem.model.Payment;
 import com.bookingsystem.model.Unit;
-import com.bookingsystem.model.User;
 import com.bookingsystem.repository.BookingRepository;
 import com.bookingsystem.repository.PaymentRepository;
-import jakarta.annotation.Nullable;
-import lombok.Builder;
 import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.quality.Strictness;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 
@@ -58,10 +51,10 @@ class PaymentServiceTest {
     @Test
     void process_payment_should_complete_payment_and_update_units() {
         // given
-        val user = user().id(USER_ID).build();
+        val user = EntitiesUtil.user().id(USER_ID).build();
         val units = Set.of(mock(Unit.class), mock(Unit.class));
-        val booking = booking().id(BOOKING_ID).user(user).units(units).build();
-        val payment = payment()
+        val booking = EntitiesUtil.booking().id(BOOKING_ID).user(user).units(units).build();
+        val payment = EntitiesUtil.payment()
                 .id(PAYMENT_ID)
                 .booking(booking)
                 .paid(false)
@@ -109,8 +102,8 @@ class PaymentServiceTest {
     @Test
     void process_payment_should_throw_exception_when_user_not_owner() {
         // given
-        val user = user().id(USER_ID).build();
-        val booking = booking().id(BOOKING_ID).user(user).build();
+        val user = EntitiesUtil.user().id(USER_ID).build();
+        val booking = EntitiesUtil.booking().id(BOOKING_ID).user(user).build();
 
         given(bookingRepository.findById(any())).willReturn(Optional.of(booking));
 
@@ -132,8 +125,8 @@ class PaymentServiceTest {
     @Test
     void process_payment_should_throw_exception_when_payment_not_found() {
         // given
-        val user = user().id(USER_ID).build();
-        val booking = booking().id(BOOKING_ID).user(user).build();
+        val user = EntitiesUtil.user().id(USER_ID).build();
+        val booking = EntitiesUtil.booking().id(BOOKING_ID).user(user).build();
 
         given(bookingRepository.findById(any())).willReturn(Optional.of(booking));
         given(paymentRepository.findByBookingId(any())).willReturn(Optional.empty());
@@ -155,9 +148,9 @@ class PaymentServiceTest {
     @Test
     void process_payment_should_throw_exception_when_payment_already_completed() {
         // given
-        val user = user().id(USER_ID).build();
-        val booking = booking().id(BOOKING_ID).user(user).build();
-        val payment = payment().id(PAYMENT_ID).booking(booking).paid(true).expired(false).build();
+        val user = EntitiesUtil.user().id(USER_ID).build();
+        val booking = EntitiesUtil.booking().id(BOOKING_ID).user(user).build();
+        val payment = EntitiesUtil.payment().id(PAYMENT_ID).booking(booking).paid(true).expired(false).build();
 
         given(bookingRepository.findById(any())).willReturn(Optional.of(booking));
         given(paymentRepository.findByBookingId(any())).willReturn(Optional.of(payment));
@@ -179,9 +172,9 @@ class PaymentServiceTest {
     @Test
     void process_payment_should_throw_exception_when_payment_expired() {
         // given
-        val user = user().id(USER_ID).build();
-        val booking = booking().id(BOOKING_ID).user(user).build();
-        val payment = payment().id(PAYMENT_ID).booking(booking).paid(false).expired(true).build();
+        val user = EntitiesUtil.user().id(USER_ID).build();
+        val booking = EntitiesUtil.booking().id(BOOKING_ID).user(user).build();
+        val payment = EntitiesUtil.payment().id(PAYMENT_ID).booking(booking).paid(false).expired(true).build();
 
         given(bookingRepository.findById(any())).willReturn(Optional.of(booking));
         given(paymentRepository.findByBookingId(any())).willReturn(Optional.of(payment));
@@ -199,65 +192,5 @@ class PaymentServiceTest {
             verify(unitService, never()).setUnitsBookingStatus(any(), any());
             verify(eventService, never()).createEvent(any(), any(), anyLong(), anyString());
         });
-    }
-
-
-    @Builder(builderMethodName = "user")
-    private User getUser(@Nullable Long id) {
-        val user = mock(User.class);
-        if (id != null) {
-            given(user.getId()).willReturn(id);
-        }
-        return user;
-    }
-
-    @Builder(builderMethodName = "booking")
-    private Booking getBooking(
-            @Nullable Long id,
-            @Nullable User user,
-            @Nullable Set<Unit> units
-    ) {
-        val booking = mock(Booking.class, withSettings().strictness(Strictness.LENIENT));
-        if (id != null) {
-            given(booking.getId()).willReturn(id);
-        }
-        if (user != null) {
-            given(booking.getUser()).willReturn(user);
-        }
-        if (units != null) {
-            given(booking.getUnits()).willReturn(units);
-        }
-        return booking;
-    }
-
-    @Builder(builderMethodName = "payment")
-    private Payment getPayment(
-            @Nullable Long id,
-            @Nullable Booking booking,
-            @Nullable Boolean paid,
-            @Nullable Boolean expired,
-            @Nullable Double amount,
-            @Nullable LocalDateTime paidAt
-    ) {
-        val payment = mock(Payment.class, withSettings().strictness(Strictness.LENIENT));
-        if (id != null) {
-            given(payment.getId()).willReturn(id);
-        }
-        if (booking != null) {
-            given(payment.getBooking()).willReturn(booking);
-        }
-        if (paid != null) {
-            given(payment.isPaid()).willReturn(paid);
-        }
-        if (expired != null) {
-            given(payment.isExpired()).willReturn(expired);
-        }
-        if (amount != null) {
-            given(payment.getPaymentAmount()).willReturn(amount);
-        }
-        if (paidAt != null) {
-            given(payment.getPaidAt()).willReturn(paidAt);
-        }
-        return payment;
     }
 }

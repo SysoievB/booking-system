@@ -3,17 +3,13 @@ package com.bookingsystem.service;
 import com.bookingsystem.api.dto.UserCreateDto;
 import com.bookingsystem.api.dto.UserUpdateDto;
 import com.bookingsystem.exceptions.UserNotFoundException;
-import com.bookingsystem.model.User;
 import com.bookingsystem.repository.UserRepository;
-import jakarta.annotation.Nullable;
-import lombok.Builder;
 import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.quality.Strictness;
 
 import java.util.Optional;
 
@@ -42,7 +38,7 @@ class UserServiceTest {
     @Test
     void create_user_should_save_user_and_create_event() {
         //given
-        val user = user().id(USER_ID).username(USER_NAME).email(USER_EMAIL).build();
+        val user = EntitiesUtil.user().id(USER_ID).username(USER_NAME).email(USER_EMAIL).build();
         val dto = new UserCreateDto(USER_NAME, USER_EMAIL);
 
         given(userRepository.save(any())).willReturn(user);
@@ -63,10 +59,10 @@ class UserServiceTest {
     @Test
     void update_user_should_update_existing_user_and_create_event() {
         //given
-        val existingUser = user()
+        val existingUser = EntitiesUtil.user()
                 .id(USER_ID).username(USER_NAME).email(USER_EMAIL)
                 .build();
-        val updatedUser = user()
+        val updatedUser = EntitiesUtil.user()
                 .id(USER_ID).username(UPDATED_NAME).email(UPDATED_EMAIL)
                 .build();
         val dto = new UserUpdateDto(UPDATED_NAME, UPDATED_EMAIL);
@@ -109,7 +105,7 @@ class UserServiceTest {
     @Test
     void get_user_by_id_should_return_user_when_exists() {
         //given
-        val user = user().id(USER_ID).username(USER_NAME).email(USER_EMAIL).build();
+        val user = EntitiesUtil.user().id(USER_ID).username(USER_NAME).email(USER_EMAIL).build();
         given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
 
         //when
@@ -176,20 +172,5 @@ class UserServiceTest {
             verify(userRepository, never()).deleteById(any());
             verify(eventService, never()).createEvent(any(), any(), anyLong(), anyString());
         });
-    }
-
-    @Builder(builderMethodName = "user")
-    private User getUser(@Nullable Long id, @Nullable String username, @Nullable String email) {
-        val user = mock(User.class, withSettings().strictness(Strictness.LENIENT));
-        if (id != null) {
-            given(user.getId()).willReturn(id);
-        }
-        if (username != null) {
-            given(user.getUsername()).willReturn(username);
-        }
-        if (email != null) {
-            given(user.getEmail()).willReturn(email);
-        }
-        return user;
     }
 }
