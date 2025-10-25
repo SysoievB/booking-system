@@ -95,12 +95,12 @@ public class UnitService {
     }
 
     public Page<Unit> searchUnits(
-            Integer numberOfRooms,
-            AccommodationType type,
-            Double minCost,
-            Double maxCost,
-            LocalDate from,
-            LocalDate to,
+            @Nullable Integer numberOfRooms,
+            @Nullable AccommodationType type,
+            @Nullable Double minCost,
+            @Nullable Double maxCost,
+            @Nullable LocalDate from,
+            @Nullable LocalDate to,
             @Nullable Pageable pageable
     ) {
         return unitRepository.searchUnits(numberOfRooms, type, minCost, maxCost, from, to, Optional.ofNullable(pageable).orElse(Pageable.unpaged()));

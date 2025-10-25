@@ -127,24 +127,24 @@ public class UnitController {
     })
     public ResponseEntity<Page<Unit>> searchUnits(
             @Parameter(description = "Number of rooms (exact match)")
-            @RequestParam(required = false) Integer numberOfRooms,
+            @RequestParam(required = false) @Nullable Integer numberOfRooms,
 
             @Parameter(description = "Accommodation type (HOME, FLAT, APARTMENTS)")
-            @RequestParam(required = false) AccommodationType type,
+            @RequestParam(required = false) @Nullable AccommodationType type,
 
             @Parameter(description = "Minimum cost (inclusive)")
-            @RequestParam(required = false) Double minCost,
+            @RequestParam(required = false) @Nullable Double minCost,
 
             @Parameter(description = "Maximum cost (inclusive)")
-            @RequestParam(required = false) Double maxCost,
+            @RequestParam(required = false) @Nullable Double maxCost,
 
             @Parameter(description = "From date (inclusive)")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) @Nullable LocalDate from,
 
             @Parameter(description = "To date (inclusive)")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            @RequestParam(required = false) LocalDate to,
+            @RequestParam(required = false) @Nullable LocalDate to,
 
             @Parameter(description = "Page number")
             @RequestParam(required = false) @Nullable Pageable pageable

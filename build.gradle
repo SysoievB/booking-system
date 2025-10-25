@@ -45,6 +45,7 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
     implementation 'org.mapstruct:mapstruct:1.6.3'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+    annotationProcessor 'org.hibernate:hibernate-jpamodelgen:6.4.4.Final'
 }
 
 tasks.named('test') {
