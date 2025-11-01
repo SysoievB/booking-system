@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.bookingsystem.configuration.RedisConfig.UNIT_COUNT_CACHE;
@@ -30,6 +31,7 @@ import static com.bookingsystem.model.BookingStatus.RESERVED;
 import static com.bookingsystem.model.EntityType.BOOKING;
 import static com.bookingsystem.model.EventOperation.*;
 import static java.util.Objects.isNull;
+import static java.util.function.Predicate.not;
 
 @Slf4j
 @Service
@@ -175,7 +177,7 @@ public class BookingService {
 
         val unavailableUnits = units
                 .stream()
-                .filter(unit -> !unit.getStatus().equals(AVAILABLE))
+                .filter(not(unit -> unit.getStatus().equals(AVAILABLE)))
                 .collect(Collectors.toSet());
 
         if (!unavailableUnits.isEmpty()) {
