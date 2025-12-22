@@ -69,7 +69,6 @@ public class UnitService {
                                 dto.bookingDate(),
                                 dto.baseCost(),
                                 dto.description()
-                                //booking
                         )
                 )
                 .map(unitRepository::save)
@@ -129,7 +128,6 @@ public class UnitService {
     public void setUnitsBookingStatus(Set<Unit> units, BookingStatus bookingStatus) {
         units.forEach(unit -> {
             unit.setStatus(bookingStatus);
-            unitRepository.save(unit);
             eventService.createEvent(
                     UNIT,
                     UPDATE,
