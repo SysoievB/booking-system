@@ -15,10 +15,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.dao.TransientDataAccessException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -50,6 +58,20 @@ public class BookingService {
      * STEP 3: User must call processPayment() to complete payment
      */
     @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Retryable(
+            retryFor = {
+                    ObjectOptimisticLockingFailureException.class,
+                    PessimisticLockingFailureException.class,
+                    CannotAcquireLockException.class,
+                    TransientDataAccessException.class
+            },
+            maxAttempts = 3,
+            backoff = @Backoff(
+                    delay = 100,      // Start with 100ms
+                    multiplier = 2.0, // Double each time: 100ms, 200ms, 400ms
+                    maxDelay = 1000   // Cap at 1 second
+            )
+    )
     @CacheEvict(value = UNIT_COUNT_CACHE, key = "'count'")
     public Booking createBooking(BookingCreateDto dto) {
         val user = userService.getUserById(dto.userId());
@@ -187,5 +209,66 @@ public class BookingService {
                     .collect(Collectors.joining(", "));
             throw new UnitNotFoundException("Units are not available: " + unavailableIds);
         }
+    }
+
+    /**
+     * Recovery method for optimistic locking failures
+     * Called after all retry attempts exhausted
+     */
+    @Recover
+    public Booking recoverCreateBooking(
+            ObjectOptimisticLockingFailureException e,
+            BookingCreateDto dto
+    ) {
+        log.error("Failed to create booking after retries - Optimistic lock conflict for user {}: {}",
+                dto.userId(), e.getMessage());
+        throw new IllegalStateException(
+                "Unable to create booking due to concurrent modifications. Please try again.", e
+        );
+    }
+
+    /**
+     * Recovery method for pessimistic locking failures (deadlocks)
+     */
+    @Recover
+    public Booking recoverCreateBooking(
+            PessimisticLockingFailureException e,
+            BookingCreateDto dto
+    ) {
+        log.error("Failed to create booking after retries - Database deadlock for user {}: {}",
+                dto.userId(), e.getMessage());
+        throw new IllegalStateException(
+                "System is currently experiencing high load. Please try again in a moment.", e
+        );
+    }
+
+    /**
+     * Recovery method for lock acquisition failures
+     */
+    @Recover
+    public Booking recoverCreateBooking(
+            CannotAcquireLockException e,
+            BookingCreateDto dto
+    ) {
+        log.error("Failed to create booking after retries - Cannot acquire lock for user {}: {}",
+                dto.userId(), e.getMessage());
+        throw new IllegalStateException(
+                "Unable to process your booking at this time. Please try again shortly.", e
+        );
+    }
+
+    /**
+     * Catch-all recovery for other transient database errors
+     */
+    @Recover
+    public Booking recoverCreateBooking(
+            TransientDataAccessException e,
+            BookingCreateDto dto
+    ) {
+        log.error("Failed to create booking after retries - Transient error for user {}: {}",
+                dto.userId(), e.getMessage(), e);
+        throw new IllegalStateException(
+                "A temporary error occurred. Please try again.", e
+        );
     }
 }
