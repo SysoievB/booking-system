@@ -10,6 +10,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.time.LocalDate;
 import java.util.Random;
@@ -17,6 +18,7 @@ import java.util.stream.IntStream;
 
 @EnableRetry
 @EnableScheduling
+@EnableTransactionManagement
 @RequiredArgsConstructor
 @SpringBootApplication
 public class BookingSystemApplication implements CommandLineRunner {

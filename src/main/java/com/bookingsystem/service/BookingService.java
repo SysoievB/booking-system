@@ -65,7 +65,7 @@ public class BookingService {
                     CannotAcquireLockException.class,
                     TransientDataAccessException.class
             },
-            maxAttempts = 3,
+            maxAttempts = 5,
             backoff = @Backoff(
                     delay = 100,      // Start with 100ms
                     multiplier = 2.0, // Double each time: 100ms, 200ms, 400ms
